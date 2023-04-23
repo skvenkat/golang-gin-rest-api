@@ -8,14 +8,14 @@ import (
 
 type User struct {
 	ID			primitive.ObjectID	`json:"_id" bson:"_id"`
-	Name		string
-	Email		string
-	Age			int
-	Password	string
-	Occupation	string
-	Token		string
-	NewToken	string
-	CreatedAt	time.Time
-	UpdatedAt	time.Time
+	Name		string				`json:"name" Usage:"required"`
+	Email		string				`json:"email" Usage:"required,alphanumeric`
+	Age             int				`json:"age"`
+	Password	string				`json:"password" Usage:"required,alphanumeric"`
+	Occupation	string				`json:"occupation"`
+	Token		string				`json:"token"`
+	NewToken	string				`json:"new_token"`
+	CreatedAt	time.Time			`json:"created_at"`
+	UpdatedAt	time.Time			`json:"updated_at"`
+}q
 
-}
