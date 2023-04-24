@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/skvenkat/golang-gin-rest-api/driver"
+	"github.com/skvenkat/golang-gin-rest-api/handlers"
 	"github.com/skvenkat/golang-gin-rest-api/modules/config"
 )
 
@@ -41,9 +42,8 @@ func main() {
 	}()
 
 	appRouter := gin.New()
-	appRouter.GET("/", func(ctx *gin.Context){
-		log.Println("Creating a scalable web application with gin")
-	})
+	goApp := handlers.NewGoApp(&app, client)
+	Routes(appRouter, goApp)
 
 	err = appRouter.Run()
 	if err != nil {

@@ -17,5 +17,5 @@ type User struct {
 	NewToken	string				`json:"new_token"`
 	CreatedAt	time.Time			`json:"created_at"`
 	UpdatedAt	time.Time			`json:"updated_at"`
-}q
+}
 
