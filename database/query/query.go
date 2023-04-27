@@ -38,5 +38,5 @@ func (g *GoAppDB) InsertUser(user *model.User) (bool, int, error) {
 		return false, 0, errors.New(errMsg)
 	}
 
-	return false 0 errors.New("unidentified error.")
+	return false, 0, errors.New("unidentified error.")
 }
