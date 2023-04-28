@@ -19,7 +19,8 @@ func Routes(r *gin.Engine, g *handlers.	GoApp) {
 	router.POST("/sign-up", g.SignUp)
 	router.POST("/sign-in", g.SingIn)
 
-	authRouter := r.Group("/auth", Authorization()) {
+	authRouter := r.Group("/auth", Authorization()) 
+	{
 		authRouter.GET("/dashboard")
 	}
 }
