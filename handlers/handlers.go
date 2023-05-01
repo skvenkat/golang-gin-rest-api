@@ -69,3 +69,96 @@ func (ga *GoApp) SignUp() gin.HandlerFunc {
         }
     }
 }
+
+
+func (ga *GoApp) SignIn() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var user *model.User
+		if err := ctx.ShouldBindJSON(&user); err != nil {
+			_ = ctx.AbortWithError(http.StatusBadRequest, gin.Error{Err: err})
+		}
+
+		regMail := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+		ok := regMail.MatchString(user.Email)
+
+		if ok {
+
+			res, checkErr := ga.DB.VerifyUser(user.Email)
+
+			if checkErr != nil {
+				_ = ctx.AbortWithError(http.StatusUnauthorized, fmt.Errorf("unregistered user %v", checkErr))
+				ctx.JSON(http.StatusUnauthorized, gin.H{"message": "unregistered user"})
+				return
+			}
+
+			id := (res["_id"]).(primitive.ObjectID)
+			password := (res["password"]).(string)
+
+			verified, err := encrypt.Verify(user.Password, password)
+			if err != nil {
+				_ = ctx.AbortWithError(http.StatusUnauthorized, errors.New("cannot verify user details"))
+				ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Incorrect login details"})
+				return
+			}
+			switch {
+			case verified:
+				cookieData := sessions.Default(ctx)
+
+				userInfo := map[string]interface{}{
+					"ID":       id,
+					"email":    user.Email,
+					"password": user.Password,
+				}
+				cookieData.Set("data", userInfo)
+
+				if err := cookieData.Save(); err != nil {
+					log.Println("error from the session storage")
+					_ = ctx.AbortWithError(http.StatusNotFound, gin.Error{Err: err})
+					return
+				}
+				// generate the jwt token
+				t1, t2, err := auth.Generate(user.Email, id)
+				if err != nil {
+					_ = ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("token no generated : %v ", err))
+				}
+
+				cookieData.Set("token", t1)
+
+				if err := cookieData.Save(); err != nil {
+					log.Println("error from the session storage")
+					_ = ctx.AbortWithError(http.StatusNotFound, gin.Error{Err: err})
+					return
+				}
+
+				// var tk map[string]string
+				tk := map[string]string{"t1": t1, "t2": t2}
+
+				// update the database adding the token to user database
+
+				_, updateErr := ga.DB.UpdateInfo(id, tk)
+				if updateErr != nil {
+					_ = ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("unregistered user %v", updateErr))
+					ctx.JSON(http.StatusBadRequest, gin.H{"message": "Incorrect login details"})
+					return
+				}
+
+				ctx.JSON(http.StatusOK, gin.H{
+					"message":       "Successfully Logged in",
+					"email":         user.Email,
+					"id":            id,
+					"session_token": t1,
+				})
+			case !verified:
+				ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Incorrect login details"})
+				return
+			}
+
+		}
+	}
+}
+
+func (ga *GoApp) DashBoard() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"resp": "Welcome to Go App Dashboard"})
+	}
+}
